@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartSignal · IrishMalone</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<audio id="audioHenshin" src="media/Henshin.mp3" loop></audio>
+<audio id="audioOOO" src="media/OOO.mp3" loop></audio>
+<style>
+:root {
+  --bg:          #0e0e0e;
+  --bg-1:        #141414;
+  --bg-2:        #1a1a1a;
+  --bg-3:        #222222;
+  --bg-4:        #2a2a2a;
+
+  --amber:       #f59e0b;
+  --amber-dim:   rgba(245,158,11,0.10);
+  --amber-glow:  rgba(245,158,11,0.35);
+  --amber-soft:  rgba(245,158,11,0.06);
+
+  --red:         #ef4444;
+  --red-dim:     rgba(239,68,68,0.12);
+  --red-glow:    rgba(239,68,68,0.40);
+  --yellow:      #eab308;
+  --yellow-dim:  rgba(234,179,8,0.12);
+  --yellow-glow: rgba(234,179,8,0.38);
+  --green:       #22c55e;
+  --green-dim:   rgba(34,197,94,0.10);
+  --green-glow:  rgba(34,197,94,0.35);
+
+  --border:      rgba(255,255,255,0.06);
+  --border-md:   rgba(255,255,255,0.11);
+  --border-hi:   rgba(245,158,11,0.25);
+
+  --text:        #f5f0e8;
+  --text-2:      #9a9080;
+  --text-3:      #4a4540;
+
+  --font-head:   'Barlow Condensed', sans-serif;
+  --font:        'Barlow', sans-serif;
+  --mono:        'Share Tech Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px;
+}
+
+::-webkit-scrollbar { width: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.18); }
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0; position: relative; z-index: 10;
+}
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand-mark {
+  width: 30px; height: 30px; border: 1px solid var(--border-hi);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-2); position: relative;
+}
+.brand-mark::after {
+  content:''; position:absolute; inset:3px;
+  background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.15);
+}
+.brand-name {
+  font-family: var(--font-head); font-size: 1.1rem; font-weight: 800;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--text);
+}
+.brand-name span { color: var(--amber); }
+.brand-sub {
+  font-family: var(--mono); font-size: 0.48rem; color: var(--text-3);
+  letter-spacing: 2px; text-transform: uppercase; margin-top: 1px;
+}
+.hd-right { display: flex; align-items: center; gap: 8px; }
+.hd-pill {
+  display: flex; align-items: center; gap: 7px; padding: 5px 13px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  font-family: var(--mono); font-size: 0.57rem; letter-spacing: 1px;
+  color: var(--text-2); cursor: pointer; transition: all 0.2s;
+}
+.hd-pill:hover { border-color: var(--border-md); color: var(--text); }
+.hd-pill.ok  { border-color: rgba(34,197,94,0.3); color: var(--green); }
+.hd-pill.err { border-color: rgba(239,68,68,0.3); color: var(--red); }
+.hd-pill.mus { border-color: var(--border-hi); color: var(--amber); }
+.pill-dot { width: 5px; height: 5px; background: currentColor; flex-shrink: 0; }
+.eq { display: flex; align-items: flex-end; gap: 2px; height: 10px; }
+.eq span { width: 2px; background: currentColor; height: 30%; }
+.hd-pill.mus .eq span:nth-child(1) { animation: ea .5s ease-in-out infinite alternate; }
+.hd-pill.mus .eq span:nth-child(2) { animation: ea .4s ease-in-out infinite alternate .1s; }
+.hd-pill.mus .eq span:nth-child(3) { animation: ea .6s ease-in-out infinite alternate .05s; }
+.hd-pill.mus .eq span:nth-child(4) { animation: ea .45s ease-in-out infinite alternate .15s; }
+@keyframes ea { from{height:15%} to{height:95%} }
+.hd-clock {
+  font-family: var(--mono); font-size: 0.95rem; color: var(--amber);
+  padding: 0 0 0 16px; border-left: 1px solid var(--border);
+  margin-left: 4px; letter-spacing: 3px;
+}
+
+/* ── MAIN: left=traffic, right=tables ── */
+.main {
+  display: grid; grid-template-columns: 370px 1fr;
+  flex: 1; min-height: 0; position: relative; z-index: 1;
+}
+
+/* ══ LEFT — TRAFFIC LIGHT ══ */
+.light-panel {
+  display: flex; flex-direction: column;
+  border-right: 2px solid var(--border-hi);
+  background: var(--bg-1); position: relative; overflow: hidden;
+}
+.light-panel::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background: repeating-linear-gradient(
+    -55deg, transparent, transparent 36px,
+    rgba(245,158,11,0.016) 36px, rgba(245,158,11,0.016) 37px
+  );
+}
+.lp-header {
+  padding: 14px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.lp-title {
+  font-family: var(--font-head); font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase; color: var(--text-3);
+}
+.lp-badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px;
+  font-family: var(--mono); font-size: 0.5rem; letter-spacing: 1px;
+  border: 1px solid var(--border); color: var(--text-3);
+}
+.lp-badge.auto   { border-color: rgba(245,158,11,0.3); color: var(--amber); background: var(--amber-dim); }
+.lp-badge.manual { border-color: rgba(234,179,8,0.3); color: var(--yellow); background: var(--yellow-dim); }
+.lp-badge-dot { width: 4px; height: 4px; background: currentColor; }
+
+.light-body {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; position: relative; z-index: 1;
+}
+.tl-outer { display: flex; flex-direction: column; align-items: center; }
+.tl-pole {
+  width: 8px; height: 66px;
+  background: linear-gradient(180deg, #282828, #181818);
+  border-left: 1px solid var(--border-md); border-right: 1px solid var(--border-md); border-top: 1px solid var(--border-md);
+}
+.tl-housing {
+  width: 128px;
+  background: linear-gradient(180deg, #1f1f1f, #171717);
+  border: 1.5px solid #303030; border-radius: 14px;
+  padding: 22px 16px; display: flex; flex-direction: column;
+  gap: 16px; align-items: center; position: relative;
+  box-shadow: 0 28px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.025), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.tl-housing::before, .tl-housing::after {
+  content:''; position:absolute; width:7px; height:7px; border-radius:50%;
+  border: 1px solid var(--border-md); background: var(--bg-3);
+}
+.tl-housing::before { top:7px; left:7px; }
+.tl-housing::after  { top:7px; right:7px; }
+
+.bulb {
+  width: 74px; height: 74px; border-radius: 50%;
+  position: relative; transition: all 0.3s cubic-bezier(.4,0,.2,1); flex-shrink: 0;
+}
+.bulb.r-off { background: #1c0a0a; border: 2px solid #2a1010; }
+.bulb.y-off { background: #1c1500; border: 2px solid #2a2000; }
+.bulb.g-off { background: #081808; border: 2px solid #0e2410; }
+.bulb.r-on {
+  background: radial-gradient(circle at 36% 30%, #ffb0b0, var(--red) 48%, #7a0000);
+  border: 2px solid var(--red);
+  box-shadow: 0 0 36px var(--red-glow), 0 0 80px rgba(239,68,68,0.18), inset 0 0 20px rgba(255,160,160,0.2);
+}
+.bulb.y-on {
+  background: radial-gradient(circle at 36% 30%, #fff2b0, var(--yellow) 48%, #5a4000);
+  border: 2px solid var(--yellow);
+  box-shadow: 0 0 36px var(--yellow-glow), 0 0 80px rgba(234,179,8,0.16);
+  animation: yflash .9s ease-in-out infinite;
+}
+.bulb.g-on {
+  background: radial-gradient(circle at 36% 30%, #aaffe8, var(--green) 48%, #006020);
+  border: 2px solid var(--green);
+  box-shadow: 0 0 36px var(--green-glow), 0 0 80px rgba(34,197,94,0.16), inset 0 0 20px rgba(100,255,180,0.18);
+}
+@keyframes yflash { 0%,100%{opacity:1} 50%{opacity:0.22} }
+.bulb::after {
+  content:''; position:absolute; top:11px; left:13px;
+  width:13px; height:13px; border-radius:50%; background:rgba(255,255,255,0.08);
+}
+.tl-base { width:78px; height:11px; background:#1a1a1a; border:1.5px solid #303030; border-top:none; border-radius:0 0 8px 8px; }
+
+.tl-status { display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:26px; }
+.tl-phase {
+  font-family: var(--font-head); font-size: 3.4rem; font-weight: 900;
+  letter-spacing: 8px; text-transform: uppercase; transition: color 0.3s; line-height: 1;
+}
+.tl-phase.r { color:var(--red); text-shadow:0 0 40px var(--red-glow); }
+.tl-phase.y { color:var(--yellow); text-shadow:0 0 40px var(--yellow-glow); }
+.tl-phase.g { color:var(--green); text-shadow:0 0 40px var(--green-glow); }
+.tl-phase.x { color:var(--text-3); }
+.tl-desc { font-family:var(--mono); font-size:0.56rem; color:var(--text-2); letter-spacing:2px; text-transform:uppercase; }
+
+.timer-sec { padding:14px 22px; border-top:1px solid var(--border); flex-shrink:0; }
+.timer-top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+.timer-label { font-family:var(--mono); font-size:0.48rem; letter-spacing:2px; color:var(--text-3); text-transform:uppercase; }
+.timer-val { font-family:var(--font-head); font-size:1.9rem; font-weight:700; color:var(--text-2); transition:color 0.3s; letter-spacing:2px; }
+.timer-val.r { color:var(--red); text-shadow:0 0 20px var(--red-glow); }
+.timer-val.y { color:var(--yellow); text-shadow:0 0 20px var(--yellow-glow); }
+.timer-val.g { color:var(--green); text-shadow:0 0 20px var(--green-glow); }
+.timer-bar { height:3px; background:var(--bg-3); overflow:hidden; }
+.timer-fill { height:100%; transition:width 0.9s linear, background 0.3s; }
+.timer-fill.r { background:var(--red); box-shadow:0 0 8px var(--red-glow); }
+.timer-fill.y { background:var(--yellow); box-shadow:0 0 8px var(--yellow-glow); }
+.timer-fill.g { background:var(--green); box-shadow:0 0 8px var(--green-glow); }
+
+.ped-strip { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 22px; border-top:1px solid var(--border); flex-shrink:0; }
+.ped-card { padding:10px 12px; background:var(--bg-2); border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+.ped-dir  { font-family:var(--mono); font-size:0.46rem; letter-spacing:1px; color:var(--text-3); text-transform:uppercase; display:block; margin-bottom:3px; }
+.ped-name { font-family:var(--font-head); font-size:0.68rem; font-weight:600; letter-spacing:1px; color:var(--text-2); text-transform:uppercase; }
+.ped-state-pill { display:flex; align-items:center; gap:5px; padding:4px 10px; font-family:var(--mono); font-size:0.53rem; font-weight:600; letter-spacing:1px; }
+.ped-state-pill.walk { background:var(--green-dim); border:1px solid rgba(34,197,94,0.22); color:var(--green); }
+.ped-state-pill.wait { background:var(--red-dim); border:1px solid rgba(239,68,68,0.22); color:var(--red); }
+.ped-state-pill .pdot { width:4px; height:4px; background:currentColor; }
+.ped-state-pill.wait .pdot { animation:yflash .7s ease-in-out infinite; }
+
+/* ══ RIGHT — TABLES ══ */
+.right-panel { display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+.rp-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 22px; height:52px; border-bottom:1px solid var(--border);
+  flex-shrink:0; background:var(--bg-1);
+}
+.rp-title { font-family:var(--font-head); font-size:0.58rem; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--text-3); }
+.rp-tag { font-family:var(--mono); font-size:0.5rem; letter-spacing:1px; padding:3px 10px; border:1px solid var(--border-hi); color:var(--amber); background:var(--amber-soft); }
+
+.rp-body { flex:1; overflow-y:auto; display:grid; grid-template-columns:1fr 1fr; }
+
+.block { border-right:1px solid var(--border); border-bottom:1px solid var(--border); display:flex; flex-direction:column; }
+.block:nth-child(even) { border-right:none; }
+.block-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 18px; border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.block-title {
+  font-family:var(--font-head); font-size:0.6rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--text-3);
+  display:flex; align-items:center; gap:8px;
+}
+.block-title::before { content:''; display:inline-block; width:12px; height:1px; background:var(--amber); opacity:.5; }
+.block-badge { font-family:var(--mono); font-size:0.46rem; letter-spacing:1px; padding:2px 8px; border:1px solid var(--border); color:var(--text-3); }
+.block-body { padding:14px 18px; flex:1; }
+
+/* Metric grid */
+.metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.mc { padding:13px 12px; background:var(--bg-1); border:1px solid var(--border); position:relative; overflow:hidden; }
+.mc::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(245,158,11,0.15),transparent); }
+.mc-label { font-family:var(--mono); font-size:0.46rem; letter-spacing:2px; color:var(--text-3); text-transform:uppercase; display:block; margin-bottom:7px; }
+.mc-val { font-family:var(--font-head); font-size:1.75rem; font-weight:900; line-height:1; transition:color 0.3s; letter-spacing:2px; color:var(--text); }
+.mc-val.r { color:var(--red); text-shadow:0 0 18px var(--red-glow); }
+.mc-val.y { color:var(--yellow); text-shadow:0 0 18px var(--yellow-glow); }
+.mc-val.g { color:var(--green); text-shadow:0 0 18px var(--green-glow); }
+.mc-val.a { color:var(--amber); }
+.mc-val.x { color:var(--text-3); }
+
+/* Stat table */
+.stat-table { display:flex; flex-direction:column; }
+.st-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.st-row:last-child { border-bottom:none; }
+.st-key { font-family:var(--mono); font-size:0.5rem; letter-spacing:1.5px; color:var(--text-3); text-transform:uppercase; }
+.st-val { font-family:var(--mono); font-size:0.68rem; color:var(--text); }
+.st-val.r { color:var(--red); }
+.st-val.g { color:var(--green); }
+.st-val.a { color:var(--amber); }
+
+/* Mode toggle */
+.mode-toggle { display:flex; background:var(--bg); border:1px solid var(--border); padding:3px; gap:3px; margin-bottom:12px; }
+.mode-btn { flex:1; padding:7px; border:none; font-family:var(--font-head); font-size:0.7rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--text-3); }
+.mode-btn:hover { color:var(--text); }
+.mode-btn.active-manual { background:var(--yellow-dim); color:var(--yellow); border:1px solid rgba(234,179,8,0.25); }
+.mode-btn.active-auto   { background:var(--amber-dim);  color:var(--amber);  border:1px solid rgba(245,158,11,0.25); }
+
+.sig-overrides { display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; }
+.sig-btn { display:flex; flex-direction:column; align-items:center; gap:7px; padding:11px 5px; border:1px solid var(--border); background:var(--bg-1); cursor:pointer; transition:all 0.2s; }
+.sig-btn:disabled { opacity:0.2; pointer-events:none; }
+.sig-btn-dot { width:11px; height:11px; border-radius:50%; transition:all 0.2s; }
+.sig-btn-label { font-family:var(--font-head); font-size:0.6rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-2); }
+.sig-btn-desc  { font-family:var(--mono); font-size:0.46rem; color:var(--text-3); }
+.sig-btn.red .sig-btn-dot { background:var(--red-dim); border:1.5px solid rgba(239,68,68,0.3); }
+.sig-btn.red:not(:disabled):hover, .sig-btn.red.sel { border-color:rgba(239,68,68,0.4); background:var(--red-dim); }
+.sig-btn.red:not(:disabled):hover .sig-btn-dot, .sig-btn.red.sel .sig-btn-dot { background:var(--red); box-shadow:0 0 14px var(--red-glow); }
+.sig-btn.red.sel .sig-btn-label { color:var(--red); }
+.sig-btn.yellow .sig-btn-dot { background:var(--yellow-dim); border:1.5px solid rgba(234,179,8,0.3); }
+.sig-btn.yellow:not(:disabled):hover, .sig-btn.yellow.sel { border-color:rgba(234,179,8,0.4); background:var(--yellow-dim); }
+.sig-btn.yellow:not(:disabled):hover .sig-btn-dot, .sig-btn.yellow.sel .sig-btn-dot { background:var(--yellow); box-shadow:0 0 14px var(--yellow-glow); }
+.sig-btn.yellow.sel .sig-btn-label { color:var(--yellow); }
+.sig-btn.green .sig-btn-dot { background:var(--green-dim); border:1.5px solid rgba(34,197,94,0.3); }
+.sig-btn.green:not(:disabled):hover, .sig-btn.green.sel { border-color:rgba(34,197,94,0.4); background:var(--green-dim); }
+.sig-btn.green:not(:disabled):hover .sig-btn-dot, .sig-btn.green.sel .sig-btn-dot { background:var(--green); box-shadow:0 0 14px var(--green-glow); }
+.sig-btn.green.sel .sig-btn-label { color:var(--green); }
+
+/* Duration config */
+.dur-grid { display:flex; flex-direction:column; gap:8px; }
+.dur-row { display:flex; align-items:center; gap:10px; }
+.dur-swatch { width:7px; height:7px; flex-shrink:0; }
+.dur-name { font-family:var(--mono); font-size:0.5rem; letter-spacing:1px; color:var(--text-2); flex:1; text-transform:uppercase; }
+.dur-input { width:56px; padding:5px 8px; background:var(--bg); border:1px solid var(--border); font-family:var(--mono); font-size:0.7rem; color:var(--text); text-align:center; transition:border-color 0.2s; }
+.dur-input:focus { outline:none; border-color:var(--border-hi); }
+.dur-input:disabled { opacity:0.25; }
+.dur-unit { font-family:var(--mono); font-size:0.48rem; color:var(--text-3); width:18px; }
+
+.apply-btn { width:100%; padding:9px; margin-top:10px; background:var(--amber-dim); border:1px solid rgba(245,158,11,0.3); font-family:var(--font-head); font-size:0.72rem; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:var(--amber); cursor:pointer; transition:all 0.2s; }
+.apply-btn:hover { background:rgba(245,158,11,0.18); border-color:var(--border-hi); }
+.apply-btn:disabled { opacity:0.25; pointer-events:none; }
+.stop-btn { width:100%; padding:6px; margin-top:5px; background:transparent; border:1px solid var(--border); font-family:var(--font-head); font-size:0.63rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-3); cursor:pointer; transition:all 0.2s; }
+.stop-btn:hover { border-color:rgba(239,68,68,0.3); color:var(--red); }
+.stop-btn:disabled { opacity:0.25; pointer-events:none; }
+
+/* Wiring */
+.wire-rows { display:flex; flex-direction:column; gap:5px; }
+.wire-row { display:flex; align-items:center; gap:10px; padding:7px 10px; background:var(--bg-1); border:1px solid var(--border); }
+.wire-swatch { width:14px; height:2px; flex-shrink:0; }
+.wire-pin  { font-family:var(--mono); font-size:0.58rem; color:var(--text); min-width:54px; }
+.wire-desc { font-family:var(--mono); font-size:0.52rem; color:var(--text-2); }
+
+/* Direction queue */
+.dir-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.dir-card { padding:10px 12px; background:var(--bg-1); border:1px solid var(--border); }
+.dir-compass { font-family:var(--mono); font-size:0.48rem; letter-spacing:1px; color:var(--text-3); display:block; margin-bottom:4px; }
+.dir-count { font-family:var(--font-head); font-size:1rem; font-weight:700; color:var(--text-2); letter-spacing:2px; }
+
+/* Logs */
+.log-body { flex:1; overflow-y:auto; padding:4px 0; }
+.log-row { display:flex; align-items:flex-start; gap:10px; padding:5px 18px; border-bottom:1px solid rgba(255,255,255,0.025); animation:lfade .2s ease; }
+@keyframes lfade { from{opacity:0;background:rgba(245,158,11,0.03)} to{opacity:1;background:transparent} }
+.log-time { font-family:var(--mono); font-size:0.48rem; color:var(--text-3); white-space:nowrap; padding-top:1px; flex-shrink:0; }
+.log-bar  { width:2px; min-height:12px; flex-shrink:0; margin-top:2px; }
+.log-msg  { font-family:var(--mono); font-size:0.56rem; color:var(--text-2); line-height:1.5; }
+
+/* Full-width log blocks */
+.block-full { grid-column:span 2; border-right:none; display:flex; flex-direction:column; min-height:150px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div>
+      <div class="brand-name">Irish<span>Malone</span></div>
+      <div class="brand-sub">ESP32 · Supabase Realtime · Intersection Control</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <button class="hd-pill" id="sbPill"><div class="pill-dot"></div><span id="sbTxt">Connecting</span></button>
+    <button class="hd-pill" id="espPill"><div class="pill-dot"></div><span id="espTxt">ESP32</span></button>
+    <button class="hd-pill" id="musicPill" onclick="toggleMusic()">
+      <div class="eq"><span></span><span></span><span></span><span></span></div>
+      <span id="musicTxt">BGM</span>
+    </button>
+    <div class="hd-clock" id="clock">00:00:00</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ══ LEFT — TRAFFIC LIGHT ══ -->
+  <div class="light-panel">
+    <div class="lp-header">
+      <span class="lp-title">Live Signal</span>
+      <div class="lp-badge auto" id="modeTag">
+        <div class="lp-badge-dot"></div>
+        <span id="modeLabelTxt">Auto Cycle</span>
+      </div>
+    </div>
+
+    <div class="light-body">
+      <div class="tl-outer">
+        <div class="tl-pole"></div>
+        <div class="tl-housing">
+          <div class="bulb r-off" id="tlR"></div>
+          <div class="bulb y-off" id="tlY"></div>
+          <div class="bulb g-off" id="tlG"></div>
+        </div>
+        <div class="tl-base"></div>
+        <div class="tl-status">
+          <div class="tl-phase x" id="siMain">---</div>
+          <div class="tl-desc" id="siSub">Waiting for signal</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-sec">
+      <div class="timer-top">
+        <span class="timer-label">Phase Timer</span>
+        <span class="timer-val" id="timerVal">--</span>
+      </div>
+      <div class="timer-bar">
+        <div class="timer-fill" id="timerFill" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div class="ped-strip">
+      <div class="ped-card">
+        <div><span class="ped-dir">N / S Crossing</span><span class="ped-name">Pedestrian</span></div>
+        <div class="ped-state-pill wait" id="pedNS"><div class="pdot"></div><span id="pedNSTxt">Wait</span></div>
+      </div>
+      <div class="ped-card">
+        <div><span class="ped-dir">E / W Crossing</span><span class="ped-name">Pedestrian</span></div>
+        <div class="ped-state-pill wait" id="pedEW"><div class="pdot"></div><span id="pedEWTxt">Wait</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT — TABLES ══ -->
+  <div class="right-panel">
+    <div class="rp-header">
+      <span class="rp-title">Analytics &amp; Control</span>
+      <span class="rp-tag" id="modeBadge">AUTO</span>
+    </div>
+    <div class="rp-body">
+
+      <!-- Live Metrics -->
+      <div class="block">
+        <div class="block-hd"><span class="block-title">Live Metrics</span></div>
+        <div class="block-body">
+          <div class="metric-grid">
+            <div class="mc"><span class="mc-label">Signal</span><div class="mc-val x" id="svSig">--</div></div>
+            <div class="mc"><span class="mc-label">Cycles</span><div class="mc-val a" id="svCycles">0</div></div>
+            <div class="mc"><span class="mc-label">Uptime</span><div class="mc-val" id="svUptime">--:--</div></div>
+            <div class="mc"><span class="mc-label">Mode</span><div class="mc-val a" id="svMode">--</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Status -->
+      <div class="block">
+        <div class="block-hd"><span class="block-title">System Status</span></div>
+        <div class="block-body">
+          <div class="stat-table">
+            <div class="st-row"><span class="st-key">ESP Status</span><span class="st-val" id="svEsp">Offline</span></div>
+            <div class="st-row"><span class="st-key">ESP IP</span><span class="st-val a" id="svIP">--</span></div>
+            <div class="st-row"><span class="st-key">Connection</span><span class="st-val" id="svConn">--</span></div>
+            <div class="st-row"><span class="st-key">Sim Mode</span><span class="st-val a" id="svSimMode">ESP32 Offline</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode Control -->
+      <div class="block">
+        <div class="block-hd"><span class="block-title">Mode Control</span></div>
+        <div class="block-body">
+          <div class="mode-toggle">
+            <button class="mode-btn" id="manBtn" onclick="setMode('manual')">Manual</button>
+            <button class="mode-btn active-auto" id="autoBtn" onclick="setMode('auto')">Auto</button>
+          </div>
+          <div id="manualSec" style="display:none">
+            <div class="sig-overrides">
+              <button class="sig-btn red dis" id="cbR" onclick="manualSet('red')">
+                <div class="sig-btn-dot"></div><span class="sig-btn-label">Red</span><span class="sig-btn-desc">Stop</span>
+              </button>
+              <button class="sig-btn yellow dis" id="cbY" onclick="manualSet('yellow')">
+                <div class="sig-btn-dot"></div><span class="sig-btn-label">Yellow</span><span class="sig-btn-desc">Caution</span>
+              </button>
+              <button class="sig-btn green dis" id="cbG" onclick="manualSet('green')">
+                <div class="sig-btn-dot"></div><span class="sig-btn-label">Green</span><span class="sig-btn-desc">Go</span>
+              </button>
+            </div>
+          </div>
+          <div id="autoSec">
+            <div class="dur-grid">
+              <div class="dur-row"><div class="dur-swatch" style="background:var(--red)"></div><span class="dur-name">Red Duration</span><input type="number" class="dur-input" id="dR" value="30" min="1" max="999" onchange="pushDurations()"><span class="dur-unit">sec</span></div>
+              <div class="dur-row"><div class="dur-swatch" style="background:var(--yellow)"></div><span class="dur-name">Yellow Duration</span><input type="number" class="dur-input" id="dY" value="5" min="1" max="999" onchange="pushDurations()"><span class="dur-unit">sec</span></div>
+              <div class="dur-row"><div class="dur-swatch" style="background:var(--green)"></div><span class="dur-name">Green Duration</span><input type="number" class="dur-input" id="dG" value="25" min="1" max="999" onchange="pushDurations()"><span class="dur-unit">sec</span></div>
+            </div>
+            <button class="apply-btn" id="applyBtn" onclick="pushDurations()">▶ Apply &amp; Start Cycle</button>
+            <button class="stop-btn" id="stopBtn" onclick="stopCycle()">◼ Stop Cycle</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GPIO Wiring -->
+      <div class="block">
+        <div class="block-hd"><span class="block-title">GPIO Wiring</span></div>
+        <div class="block-body">
+          <div class="wire-rows">
+            <div class="wire-row"><div class="wire-swatch" style="background:var(--red)"></div><span class="wire-pin">GPIO 25</span><span class="wire-desc">RED → 220Ω → GND</span></div>
+            <div class="wire-row"><div class="wire-swatch" style="background:var(--yellow)"></div><span class="wire-pin">GPIO 26</span><span class="wire-desc">YEL → 220Ω → GND</span></div>
+            <div class="wire-row"><div class="wire-swatch" style="background:var(--green)"></div><span class="wire-pin">GPIO 27</span><span class="wire-desc">GRN → 220Ω → GND</span></div>
+            <div class="wire-row"><div class="wire-swatch" style="background:var(--text-3)"></div><span class="wire-pin">GND</span><span class="wire-desc">Common ground</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Direction Queue -->
+      <div class="block">
+        <div class="block-hd"><span class="block-title">Direction Queue</span></div>
+        <div class="block-body">
+          <div class="dir-grid">
+            <div class="dir-card"><span class="dir-compass">▲ North</span><span class="dir-count" id="dN">--</span></div>
+            <div class="dir-card"><span class="dir-compass">▼ South</span><span class="dir-count" id="dS">--</span></div>
+            <div class="dir-card"><span class="dir-compass">◄ West</span><span class="dir-count" id="dW">--</span></div>
+            <div class="dir-card"><span class="dir-compass">► East</span><span class="dir-count" id="dE">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="block" style="border-right:none; min-height:160px;">
+        <div class="block-hd"><span class="block-title">Event Log</span><span class="block-badge">Live</span></div>
+        <div class="log-body" id="logBody"></div>
+      </div>
+
+      <!-- System Log — full width -->
+      <div class="block-full">
+        <div class="block-hd"><span class="block-title">System Log</span><span class="block-badge">Realtime</span></div>
+        <div class="log-body" id="logBody2" style="min-height:120px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SURL = 'https://ikbbrcjgoyjgsxkbfkoz.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrYmJyY2pnb3lqZ3N4a2Jma296Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjAwNDksImV4cCI6MjA5MTMzNjA0OX0.urcBE2ZBgjgn5jVBNeq4ngMMyJmCsjNDRFi10C3Y9-U';
+const { createClient } = supabase;
+const sb = createClient(SURL, SKEY);
+
+async function sbPatch(f){const{error}=await sb.from('traffic_light').upsert({id:1,...f},{onConflict:'id'});if(error)console.error(error.message)}
+async function sbGet(){const{data,error}=await sb.from('traffic_light').select('*').eq('id',1).single();if(error){console.error(error.message);return null}return data}
+
+let sig='red', mode='auto', cycles=0, prevSig='', prevMode='';
+let dispTimer=null, dispMax=30, dispLeft=30;
+
+setInterval(()=>{ document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8) },1000);
+
+function setActive(color){
+  document.getElementById('tlR').className='bulb '+(color==='red'?'r-on':'r-off');
+  document.getElementById('tlY').className='bulb '+(color==='yellow'?'y-on':'y-off');
+  document.getElementById('tlG').className='bulb '+(color==='green'?'g-on':'g-off');
+  const cls={red:'r',yellow:'y',green:'g'}[color];
+  const m=document.getElementById('siMain'); m.textContent=color.toUpperCase(); m.className='tl-phase '+cls;
+  document.getElementById('siSub').textContent={red:'All Stop · Hold Position',yellow:'Caution · Prepare to Stop',green:'Clear · Traffic Flowing'}[color];
+  const sv=document.getElementById('svSig'); sv.textContent=color.toUpperCase(); sv.className='mc-val '+cls;
+  document.getElementById('timerVal').className='timer-val '+cls;
+  document.getElementById('timerFill').className='timer-fill '+cls;
+  document.querySelectorAll('.sig-btn').forEach(b=>b.classList.remove('sel'));
+  const idx={red:0,yellow:1,green:2}[color];
+  const btns=document.querySelectorAll('.sig-btn'); if(btns[idx]) btns[idx].classList.add('sel');
+  if(color==='red'){ setPed('pedNS','pedNSTxt','walk','Walk'); setPed('pedEW','pedEWTxt','walk','Walk'); }
+  else { setPed('pedNS','pedNSTxt','wait','Wait'); setPed('pedEW','pedEWTxt','wait','Wait'); }
+  sig=color;
+}
+
+function setPed(id,txtId,state,label){ document.getElementById(id).className='ped-state-pill '+state; document.getElementById(txtId).textContent=label; }
+
+async function manualSet(color){
+  if(mode!=='manual'){ const t=document.getElementById('modeTag'); t.innerHTML='<div class="lp-badge-dot"></div><span>Switch to Manual!</span>'; t.className='lp-badge manual'; setTimeout(()=>applyModeUI(mode),1400); return; }
+  setActive(color); stopDispTimer(); log(`Dashboard → ${color.toUpperCase()} (manual)`,color);
+  await sbPatch({signal:color,updated_at:new Date().toISOString()});
+}
+
+async function setMode(m){ mode=m; applyModeUI(m); syncHenshin(m); if(m==='auto') stopDispTimer(); log(`Mode → ${m.toUpperCase()}`,'amber'); await sbPatch({mode:m}); }
+
+function applyModeUI(m){
+  const isM=m==='manual';
+  document.getElementById('manBtn').className='mode-btn'+(isM?' active-manual':'');
+  document.getElementById('autoBtn').className='mode-btn'+(isM?'':' active-auto');
+  document.getElementById('svMode').textContent=m.toUpperCase();
+  document.getElementById('modeBadge').textContent=m.toUpperCase();
+  ['cbR','cbY','cbG'].forEach(id=>{ const btn=document.getElementById(id); if(isM) btn.classList.remove('dis'); else btn.classList.add('dis'); });
+  const mt=document.getElementById('modeTag'); const ml=document.getElementById('modeLabelTxt');
+  mt.className='lp-badge '+(isM?'manual':'auto'); ml.textContent=isM?'Manual Active':'Auto Cycle';
+  document.getElementById('manualSec').style.display=isM?'block':'none';
+  document.getElementById('autoSec').style.display=isM?'none':'block';
+}
+
+function stopCycle(){ stopDispTimer(); log('Cycle stopped','amber'); }
+
+function startDispTimer(color,dm){
+  stopDispTimer(); if(mode!=='auto') return;
+  dispMax=dm[color]||10; dispLeft=dispMax; refreshTimer();
+  dispTimer=setInterval(()=>{ dispLeft=Math.max(0,dispLeft-1); refreshTimer(); },1000);
+}
+
+function stopDispTimer(){ if(dispTimer){ clearInterval(dispTimer); dispTimer=null; } document.getElementById('timerVal').textContent='--'; document.getElementById('timerFill').style.width='100%'; }
+function refreshTimer(){ document.getElementById('timerVal').textContent=dispLeft+'s'; document.getElementById('timerFill').style.width=(dispLeft/dispMax*100)+'%'; }
+
+async function pushDurations(){ await sbPatch({dur_red:+document.getElementById('dR').value||30,dur_yellow:+document.getElementById('dY').value||5,dur_green:+document.getElementById('dG').value||25}); log('Durations updated','amber'); }
+
+function handleSnap(d){
+  if(!d) return;
+  const ok=d.esp32_online;
+  const ep=document.getElementById('espPill'); ep.className='hd-pill '+(ok?'ok':'err');
+  document.getElementById('espTxt').textContent=ok?'ESP32 OK':'ESP32 OFF';
+  document.getElementById('svEsp').textContent=ok?'Online':'Offline';
+  document.getElementById('svEsp').className='st-val '+(ok?'g':'r');
+  document.getElementById('svSimMode').textContent=ok?'Hardware':'ESP32 Offline';
+  if(d.ip){ document.getElementById('svIP').textContent=d.ip; }
+  if(d.uptime!=null){ const mm=String(Math.floor(d.uptime/60)).padStart(2,'0'),ss=String(d.uptime%60).padStart(2,'0'); document.getElementById('svUptime').textContent=`${mm}:${ss}`; }
+  if(d.dur_red!=null) document.getElementById('dR').value=d.dur_red;
+  if(d.dur_yellow!=null) document.getElementById('dY').value=d.dur_yellow;
+  if(d.dur_green!=null) document.getElementById('dG').value=d.dur_green;
+  if(d.mode&&d.mode!==prevMode){ prevMode=d.mode; if(d.mode!==mode){ mode=d.mode; applyModeUI(mode); syncHenshin(mode); log(`Mode synced ← ${mode.toUpperCase()}`,'amber'); }}
+  if(d.signal&&d.signal!==prevSig){
+    const isA=mode==='auto';
+    if(isA&&prevSig!==''){ if(d.signal==='red'){ cycles++; document.getElementById('svCycles').textContent=cycles; } startDispTimer(d.signal,{red:d.dur_red||+document.getElementById('dR').value||30,yellow:d.dur_yellow||+document.getElementById('dY').value||5,green:d.dur_green||+document.getElementById('dG').value||25}); }
+    setActive(d.signal); if(!isA) stopDispTimer();
+    log(`Signal ← ${d.signal.toUpperCase()} (${isA?'auto/ESP32':'manual'})`,d.signal); prevSig=d.signal;
+  }
+}
+
+(async()=>{
+  const d=await sbGet(); const ok=d!==null;
+  const sp=document.getElementById('sbPill'); sp.className='hd-pill '+(ok?'ok':'err');
+  document.getElementById('sbTxt').textContent=ok?'Supabase OK':'Offline';
+  document.getElementById('svConn').textContent=ok?'Connected':'Disconnected';
+  document.getElementById('svConn').className='st-val '+(ok?'g':'r');
+  log(ok?'Supabase connected':'Supabase error',ok?'green':'red');
+  if(ok){ if(d.mode){ mode=d.mode; prevMode=d.mode; applyModeUI(mode); } handleSnap(d); }
+})();
+
+sb.channel('tl_v3').on('postgres_changes',{event:'*',schema:'public',table:'traffic_light',filter:'id=eq.1'},p=>handleSnap(p.new))
+  .subscribe(s=>{ if(s==='SUBSCRIBED') log('Realtime channel active','green'); });
+
+function log(msg,color){
+  const cc={red:'#ef4444',yellow:'#eab308',green:'#22c55e',amber:'#f59e0b'}[color]||'#4a4540';
+  ['logBody','logBody2'].forEach(id=>{
+    const wrap=document.getElementById(id); if(!wrap) return;
+    const t=new Date().toTimeString().slice(0,8);
+    const el=document.createElement('div'); el.className='log-row';
+    el.innerHTML=`<span class="log-time">${t}</span><div class="log-bar" style="background:${cc}"></div><span class="log-msg">${msg}</span>`;
+    wrap.insertBefore(el,wrap.firstChild);
+    if(wrap.children.length>60) wrap.lastChild.remove();
+  });
+}
+
+applyModeUI('auto');
+
+const aH=document.getElementById('audioHenshin'), aO=document.getElementById('audioOOO');
+let musicOn=false;
+function syncHenshin(m){ if(m==='auto') aH.play().catch(()=>{}); else aH.pause(); }
+function toggleMusic(){
+  const btn=document.getElementById('musicPill');
+  if(musicOn){ aO.pause(); musicOn=false; btn.classList.remove('mus'); document.getElementById('musicTxt').textContent='BGM'; }
+  else { aO.play().catch(()=>{}); musicOn=true; btn.classList.add('mus'); document.getElementById('musicTxt').textContent='Playing'; }
+}
+
+log('SmartSignal v3 ready','amber');
+log('Connecting to Supabase...','amber');
+</script>
+</body>
+</html>
